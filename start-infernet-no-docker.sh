@@ -215,7 +215,7 @@ download_infernet_binary() {
                 info "源代码目录内容："
                 ls -la
                 
-                # 检查是否有 Cargo.toml（Rust 项目）
+                # 检查项目类型并编译
                 if [ -f "Cargo.toml" ]; then
                     info "检测到 Rust 项目，正在编译..."
                     
@@ -256,8 +256,54 @@ download_infernet_binary() {
                         error "编译失败"
                         exit 1
                     fi
+                elif [ -f "pyproject.toml" ] || [ -f "requirements.txt" ]; then
+                    info "检测到 Python 项目，正在安装..."
+                    
+                    # 检查 Python 是否安装
+                    if ! command -v python3 &> /dev/null; then
+                        error "Python3 未安装，请先安装 Python3"
+                        exit 1
+                    fi
+                    
+                    # 检查 pip 是否安装
+                    if ! command -v pip3 &> /dev/null; then
+                        error "pip3 未安装，请先安装 pip3"
+                        exit 1
+                    fi
+                    
+                    # 安装项目依赖
+                    info "正在安装 Python 依赖..."
+                    if [ -f "requirements.txt" ]; then
+                        pip3 install -r requirements.txt
+                    fi
+                    
+                    # 查找入口脚本
+                    if [ -f "src/main.py" ]; then
+                        ENTRY_SCRIPT="src/main.py"
+                    elif [ -f "main.py" ]; then
+                        ENTRY_SCRIPT="main.py"
+                    elif [ -f "infernet_node.py" ]; then
+                        ENTRY_SCRIPT="infernet_node.py"
+                    else
+                        # 查找任何 Python 文件作为入口
+                        ENTRY_SCRIPT=$(find . -name "*.py" | head -1)
+                    fi
+                    
+                    if [ -n "$ENTRY_SCRIPT" ]; then
+                        # 创建启动脚本
+                        cat > "$infernet_binary" << EOF
+#!/bin/bash
+cd "$(dirname "\$0")/.."
+python3 "$ENTRY_SCRIPT" "\$@"
+EOF
+                        chmod +x "$infernet_binary"
+                        info "Python 项目安装成功，启动脚本已创建: $infernet_binary"
+                    else
+                        error "未找到 Python 入口文件"
+                        exit 1
+                    fi
                 else
-                    error "未找到 Cargo.toml，无法编译"
+                    error "未找到 Cargo.toml 或 pyproject.toml，无法编译"
                     info "当前目录文件："
                     ls -la
                     exit 1
