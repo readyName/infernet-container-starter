@@ -265,16 +265,17 @@ download_infernet_binary() {
                         exit 1
                     fi
                     
-                    # 检查 pip 是否安装
-                    if ! command -v pip3 &> /dev/null; then
-                        error "pip3 未安装，请先安装 pip3"
-                        exit 1
-                    fi
+                    # 创建虚拟环境
+                    VENV_DIR="$infernet_binary_dir/venv"
+                    info "创建虚拟环境: $VENV_DIR"
+                    python3 -m venv "$VENV_DIR"
                     
-                    # 安装项目依赖
+                    # 激活虚拟环境并安装依赖
                     info "正在安装 Python 依赖..."
+                    source "$VENV_DIR/bin/activate"
+                    
                     if [ -f "requirements.txt" ]; then
-                        pip3 install -r requirements.txt
+                        pip install -r requirements.txt
                     fi
                     
                     # 查找入口脚本
@@ -294,7 +295,8 @@ download_infernet_binary() {
                         cat > "$infernet_binary" << EOF
 #!/bin/bash
 cd "$(dirname "\$0")/.."
-python3 "$ENTRY_SCRIPT" "\$@"
+source "$VENV_DIR/bin/activate"
+python "$ENTRY_SCRIPT" "\$@"
 EOF
                         chmod +x "$infernet_binary"
                         info "Python 项目安装成功，启动脚本已创建: $infernet_binary"
