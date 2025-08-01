@@ -157,7 +157,7 @@ download_infernet_binary() {
         
         # 下载最新版本（这里使用示例 URL，实际需要从官方获取）
         VERSION="1.4.0"
-        DOWNLOAD_URL="https://github.com/ritual-net/infernet/releases/download/v${VERSION}/infernet-node-${VERSION}-${ARCH}.tar.gz"
+        DOWNLOAD_URL="https://github.com/ritual-net/infernet-node/archive/refs/tags/v1.4.0.tar.gz"
         
         info "下载 Infernet 节点 v${VERSION}..."
         if wget -O /tmp/infernet-node.tar.gz "$DOWNLOAD_URL"; then
