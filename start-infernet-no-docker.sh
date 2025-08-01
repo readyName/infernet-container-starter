@@ -163,29 +163,39 @@ download_infernet_binary() {
         if wget -O /tmp/infernet-node.tar.gz "$DOWNLOAD_URL"; then
             info "下载成功，正在解压源代码..."
             
+            # 确定临时目录路径
+            if [ -n "$TMPDIR" ]; then
+                TEMP_DIR="$TMPDIR"
+            elif [ -d "/var/folders" ]; then
+                TEMP_DIR="/var/folders"
+            else
+                TEMP_DIR="/tmp"
+            fi
+            info "使用临时目录: $TEMP_DIR"
+            
             # 解压源代码
-            if tar -xzf /tmp/infernet-node.tar.gz -C /tmp; then
+            if tar -xzf /tmp/infernet-node.tar.gz -C "$TEMP_DIR"; then
                 info "解压成功，正在查找源代码目录..."
                 
-                # 列出 /tmp 目录内容，帮助调试
+                # 列出临时目录内容，帮助调试
                 info "临时目录内容："
-                ls -la /tmp/ | grep infernet || info "未找到 infernet 相关文件"
+                ls -la "$TEMP_DIR/" | grep infernet || info "未找到 infernet 相关文件"
                 
                 # 查找解压后的源代码目录（更灵活的查找）
                 info "正在查找 infernet-node-* 目录..."
                 
                 # 直接检查是否存在 infernet-node-1.4.0 目录
-                if [ -d "/tmp/infernet-node-1.4.0" ]; then
-                    SOURCE_DIR="/tmp/infernet-node-1.4.0"
+                if [ -d "$TEMP_DIR/infernet-node-1.4.0" ]; then
+                    SOURCE_DIR="$TEMP_DIR/infernet-node-1.4.0"
                     info "直接找到目录: $SOURCE_DIR"
                 else
                     # 尝试使用 ls 查找
-                    SOURCE_DIR=$(ls -d /tmp/infernet-node-* 2>/dev/null | head -1)
+                    SOURCE_DIR=$(ls -d "$TEMP_DIR"/infernet-node-* 2>/dev/null | head -1)
                     info "ls 查找结果: $SOURCE_DIR"
                     
                     if [ -z "$SOURCE_DIR" ]; then
                         # 最后尝试：查找任何目录
-                        SOURCE_DIR=$(ls -d /tmp/*/ 2>/dev/null | head -1 | sed 's/\/$//')
+                        SOURCE_DIR=$(ls -d "$TEMP_DIR"/*/ 2>/dev/null | head -1 | sed 's/\/$//')
                         info "最后查找结果: $SOURCE_DIR"
                         
                         if [ -z "$SOURCE_DIR" ]; then
