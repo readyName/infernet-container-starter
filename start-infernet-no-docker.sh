@@ -165,15 +165,32 @@ download_infernet_binary() {
             
             # 解压源代码
             if tar -xzf /tmp/infernet-node.tar.gz -C /tmp; then
-                # 查找解压后的源代码目录
-                SOURCE_DIR=$(find /tmp -name "infernet-node-*" -type d | head -1)
+                info "解压成功，正在查找源代码目录..."
+                
+                # 列出 /tmp 目录内容，帮助调试
+                info "临时目录内容："
+                ls -la /tmp/ | grep infernet || info "未找到 infernet 相关文件"
+                
+                # 查找解压后的源代码目录（更灵活的查找）
+                SOURCE_DIR=$(find /tmp -maxdepth 1 -name "*infernet*" -type d | head -1)
                 if [ -z "$SOURCE_DIR" ]; then
-                    error "未找到源代码目录"
-                    exit 1
+                    # 尝试查找任何可能的目录
+                    SOURCE_DIR=$(find /tmp -maxdepth 1 -type d -name "*" | grep -v "^/tmp$" | head -1)
+                    if [ -z "$SOURCE_DIR" ]; then
+                        error "未找到源代码目录"
+                        info "请检查下载的文件是否正确"
+                        exit 1
+                    else
+                        warn "找到可能的目录: $SOURCE_DIR"
+                    fi
                 fi
                 
                 info "找到源代码目录: $SOURCE_DIR"
                 cd "$SOURCE_DIR"
+                
+                # 列出当前目录内容
+                info "源代码目录内容："
+                ls -la
                 
                 # 检查是否有 Cargo.toml（Rust 项目）
                 if [ -f "Cargo.toml" ]; then
@@ -208,6 +225,8 @@ download_infernet_binary() {
                             info "编译成功，二进制文件已安装到: $infernet_binary"
                         else
                             error "编译成功但未找到二进制文件"
+                            info "target/release 目录内容："
+                            find target/release -type f 2>/dev/null || info "target/release 目录不存在"
                             exit 1
                         fi
                     else
@@ -216,12 +235,14 @@ download_infernet_binary() {
                     fi
                 else
                     error "未找到 Cargo.toml，无法编译"
+                    info "当前目录文件："
+                    ls -la
                     exit 1
                 fi
                 
                 # 清理临时文件
                 rm -f /tmp/infernet-node.tar.gz
-                rm -rf /tmp/infernet-node-*
+                rm -rf /tmp/infernet-*
                 
             else
                 error "解压源代码失败"
