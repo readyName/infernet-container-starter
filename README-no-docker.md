@@ -34,7 +34,7 @@
 ### 1. 启动服务
 
 ```bash
-./start-infernet-no-docker.sh start
+./start-infernet-no-docker.sh
 ```
 
 首次运行时会：

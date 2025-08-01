@@ -277,15 +277,7 @@ check_status() {
 
 # 主函数
 main() {
-    case "${1:-start}" in
-        "start")
-            check_system_dependencies
-            load_or_prompt_config
-            install_redis
-            download_infernet_binary
-            update_config_files
-            start_services
-            ;;
+    case "${1:-}" in
         "stop")
             stop_services
             ;;
@@ -302,9 +294,18 @@ main() {
             update_config_files
             start_services
             ;;
+        "")
+            # 默认行为：启动服务
+            check_system_dependencies
+            load_or_prompt_config
+            install_redis
+            download_infernet_binary
+            update_config_files
+            start_services
+            ;;
         *)
-            echo "用法: $0 {start|stop|status|restart}"
-            echo "  start   - 启动 Infernet 节点（默认）"
+            echo "用法: $0 [stop|status|restart]"
+            echo "  无参数 - 启动 Infernet 节点（默认）"
             echo "  stop    - 停止所有服务"
             echo "  status  - 检查服务状态"
             echo "  restart - 重启所有服务"
