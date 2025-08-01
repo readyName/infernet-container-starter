@@ -172,10 +172,15 @@ download_infernet_binary() {
                 ls -la /tmp/ | grep infernet || info "未找到 infernet 相关文件"
                 
                 # 查找解压后的源代码目录（更灵活的查找）
+                info "正在查找 infernet-node-* 目录..."
                 SOURCE_DIR=$(find /tmp -maxdepth 1 -name "infernet-node-*" -type d | head -1)
+                info "find 命令结果: $SOURCE_DIR"
+                
                 if [ -z "$SOURCE_DIR" ]; then
-                    # 尝试查找任何可能的目录
-                    SOURCE_DIR=$(find /tmp -maxdepth 1 -type d -name "*" | grep -v "^/tmp$" | head -1)
+                    info "尝试查找任何目录..."
+                    SOURCE_DIR=$(find /tmp -maxdepth 1 -type d | grep -v "^/tmp$" | head -1)
+                    info "备用查找结果: $SOURCE_DIR"
+                    
                     if [ -z "$SOURCE_DIR" ]; then
                         error "未找到源代码目录"
                         info "请检查下载的文件是否正确"
