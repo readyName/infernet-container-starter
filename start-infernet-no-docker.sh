@@ -138,7 +138,7 @@ download_infernet_binary() {
     info "检查 Infernet 节点二进制文件..."
     
     if [ ! -f "$infernet_binary" ]; then
-        info "Infernet 节点二进制文件不存在，正在下载..."
+        info "Infernet 节点二进制文件不存在，正在下载源代码并编译..."
         mkdir -p "$infernet_binary_dir"
         
         # 根据操作系统下载对应版本
@@ -157,16 +157,79 @@ download_infernet_binary() {
         
         # 下载最新版本（这里使用示例 URL，实际需要从官方获取）
         VERSION="1.4.0"
-        DOWNLOAD_URL="https://github.com/ritual-net/infernet-node/archive/refs/tags/v1.4.0.tar.gz"
+        DOWNLOAD_URL="https://github.com/ritual-net/infernet-node/archive/refs/tags/v${VERSION}.tar.gz"
         
-        info "下载 Infernet 节点 v${VERSION}..."
+        info "下载 Infernet 节点源代码 v${VERSION}..."
         if wget -O /tmp/infernet-node.tar.gz "$DOWNLOAD_URL"; then
-            tar -xzf /tmp/infernet-node.tar.gz -C "$infernet_binary_dir"
-            chmod +x "$infernet_binary"
-            rm /tmp/infernet-node.tar.gz
-            info "Infernet 节点下载完成"
+            info "下载成功，正在解压源代码..."
+            
+            # 解压源代码
+            if tar -xzf /tmp/infernet-node.tar.gz -C /tmp; then
+                # 查找解压后的源代码目录
+                SOURCE_DIR=$(find /tmp -name "infernet-node-*" -type d | head -1)
+                if [ -z "$SOURCE_DIR" ]; then
+                    error "未找到源代码目录"
+                    exit 1
+                fi
+                
+                info "找到源代码目录: $SOURCE_DIR"
+                cd "$SOURCE_DIR"
+                
+                # 检查是否有 Cargo.toml（Rust 项目）
+                if [ -f "Cargo.toml" ]; then
+                    info "检测到 Rust 项目，正在编译..."
+                    
+                    # 检查 Rust 是否安装
+                    if ! command -v cargo &> /dev/null; then
+                        info "Rust 未安装，正在安装..."
+                        case $PACKAGE_MANAGER in
+                            "brew")
+                                brew install rust
+                                ;;
+                            "apt")
+                                curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+                                source ~/.cargo/env
+                                ;;
+                            "yum")
+                                curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+                                source ~/.cargo/env
+                                ;;
+                        esac
+                    fi
+                    
+                    # 编译项目
+                    info "正在编译 Infernet 节点..."
+                    if cargo build --release; then
+                        # 查找编译后的二进制文件
+                        BINARY_FOUND=$(find target/release -name "infernet-node" -type f | head -1)
+                        if [ -n "$BINARY_FOUND" ]; then
+                            cp "$BINARY_FOUND" "$infernet_binary"
+                            chmod +x "$infernet_binary"
+                            info "编译成功，二进制文件已安装到: $infernet_binary"
+                        else
+                            error "编译成功但未找到二进制文件"
+                            exit 1
+                        fi
+                    else
+                        error "编译失败"
+                        exit 1
+                    fi
+                else
+                    error "未找到 Cargo.toml，无法编译"
+                    exit 1
+                fi
+                
+                # 清理临时文件
+                rm -f /tmp/infernet-node.tar.gz
+                rm -rf /tmp/infernet-node-*
+                
+            else
+                error "解压源代码失败"
+                exit 1
+            fi
         else
             error "下载 Infernet 节点失败，请检查网络连接或手动下载"
+            exit 1
         fi
     else
         info "Infernet 节点二进制文件已存在"
